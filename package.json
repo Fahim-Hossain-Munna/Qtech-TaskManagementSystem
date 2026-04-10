@@ -16,6 +16,7 @@
         "vite": "^6.2.4"
     },
     "dependencies": {
+        "@heroicons/vue": "^2.2.0",
         "pinia": "^3.0.3",
         "pinia-plugin-persistedstate": "^4.3.0",
         "sweetalert2": "^11.22.0",

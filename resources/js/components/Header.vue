@@ -4,7 +4,7 @@
             <div class="flex justify-between items-center h-16">
                 <!-- Logo -->
                 <div class="flex-shrink-0">
-                    <a href="#" class="text-xl font-bold text-blue-600">FHM Book Store</a>
+                    <a href="#" class="text-xl font-bold text-blue-600">TM System</a>
                 </div>
 
                 <!-- Toggle button (mobile) -->
@@ -20,8 +20,6 @@
                 <!-- Desktop menu -->
                 <div class="hidden md:flex items-center space-x-6">
                     <RouterLink to="/" class="text-gray-700 hover:text-blue-600">Home</RouterLink>
-                    <RouterLink v-for="category in categories" :key="category.id" to="/"
-                        class="text-gray-700 hover:text-blue-600 capitalize">{{ category.title }}</RouterLink>
                     <div v-if="authStore.token" class="hidden md:flex items-center space-x-4 relative">
                         <div class="text-right">
                             <p class="text-sm font-medium text-gray-800">{{ authStore.user.name }}</p>
@@ -47,9 +45,6 @@
             <!-- Mobile menu -->
             <div v-if="isOpen" class="md:hidden pt-2 pb-4 space-y-2">
                 <RouterLink to="/" class="block text-gray-700 hover:text-blue-600">Home</RouterLink>
-                <RouterLink v-for="category in categories" :key="category.id" href="/"
-                    class="text-gray-700 hover:text-blue-600 capitalize">{{ category.title }}</RouterLink>
-
                 <div v-if="authStore.token" class="md:hidden border-t border-gray-200 pt-4 mt-4">
                     <div class="flex items-center space-x-4">
                         <img class="w-10 h-10 rounded-full border-2 border-blue-500" src="https://i.pravatar.cc/100"
@@ -87,15 +82,6 @@ const authStore = useAuthStore();
 const toggleProfileMenu = () => {
     profileOpen.value = !profileOpen.value;
 };
-
-onMounted(async () => {
-    try {
-        const response = await axios.get('/categories');
-        categories.value = response.data?.data;
-    } catch (error) {
-        console.error('Error fetching categories:', error);
-    }
-});
 
 const toggleMenu = () => {
     isOpen.value = !isOpen.value;

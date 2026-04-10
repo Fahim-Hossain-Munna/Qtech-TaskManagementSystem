@@ -1,10 +1,19 @@
 import { createRouter, createWebHistory } from "vue-router";
 import simpleLayout from "./layouts/Simple.vue";
+import defaultLayout from "./layouts/Default.vue";
 import { useAuthStore } from "./store/authStore";
 
 const router = createRouter({
     history: createWebHistory(),
     routes: [
+        {
+            path: "/",
+            name: "home",
+            component: () => import("./pages/Home.vue"),
+            meta: {
+                layout: defaultLayout,
+            },
+        },
         {
             path: "/login",
             name: "login",
