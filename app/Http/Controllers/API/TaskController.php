@@ -17,7 +17,7 @@ class TaskController extends Controller
     public function index(Request $request)
     {
         try {
-            $user = Auth::user();
+            $user = Auth::guard('api')->user();
             $query = Task::where('user_id', $user->id);
 
             $perPage = $request->input('items_per_page', 15);
@@ -59,8 +59,10 @@ class TaskController extends Controller
     public function store(TaskStoreRequest $request)
     {
         try {
+            $user = Auth::guard('api')->user();
+
             $task = Task::create([
-                'user_id' => Auth::id(),
+                'user_id' => $user->id,
                 'title' => $request->title,
                 'description' => $request->description,
                 'status' => $request->status,
@@ -77,7 +79,8 @@ class TaskController extends Controller
     public function show($id)
     {
         try {
-            $task = Task::where('user_id', Auth::id())->findOrFail($id);
+            $user = Auth::guard('api')->user();
+            $task = Task::where('user_id', $user->id)->findOrFail($id);
 
             return $this->json('Task show successfully', $task,200);
         } catch (\Exception $e) {
@@ -88,7 +91,8 @@ class TaskController extends Controller
     public function update(TaskUpdateRequest $request, $id)
     {
         try {
-            $task = Task::where('user_id', Auth::id())->findOrFail($id);
+            $user = Auth::guard('api')->user();
+            $task = Task::where('user_id', $user->id)->findOrFail($id);
 
             $task->update($request->only(['title', 'description', 'status']));
 
@@ -101,7 +105,8 @@ class TaskController extends Controller
     public function destroy($id)
     {
         try {
-            $task = Task::where('user_id', Auth::id())->findOrFail($id);
+            $user = Auth::guard('api')->user();
+            $task = Task::where('user_id', $user->id)->findOrFail($id);
             $task->delete();
 
             return $this->json('Task deleted successfully', [],200);
