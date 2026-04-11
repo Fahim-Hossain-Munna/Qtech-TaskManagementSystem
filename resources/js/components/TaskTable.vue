@@ -9,12 +9,14 @@
                     type="text"
                     placeholder="Search tasks..."
                     class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    @keyup.enter="handleFilterChange"
                 />
 
                 <!-- Filter Select -->
                 <select
                     v-model="filterStatus"
                     class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    @change="handleFilterChange"
                 >
                     <option value="">All Status</option>
                     <option value="pending">Pending</option>
@@ -34,11 +36,6 @@
             </div>
         </div>
 
-        <!-- Empty State -->
-        <div v-else-if="filteredTasks.length === 0" class="text-center py-12">
-            <p class="text-gray-500 text-lg">No tasks found. Create your first task!</p>
-        </div>
-
         <!-- Table -->
         <div v-else class="overflow-x-auto">
             <table class="min-w-full border-collapse">
@@ -53,7 +50,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="task in filteredTasks" :key="task.id" class="border-b border-gray-200 hover:bg-gray-50 transition">
+                    <tr v-for="task in tasks" :key="task.id" class="border-b border-gray-200 hover:bg-gray-50 transition">
                         <td class="px-2 py-4 text-sm text-gray-800">#{{ task.id }}</td>
                         <td class="px-2 py-4 text-sm font-medium text-gray-800">{{ formatTitle(task.title) }}</td>
                         <td class="px-2 py-4 text-sm text-gray-600">
@@ -73,30 +70,13 @@
                         </td>
                         <td class="px-2 py-4 text-center">
                             <div class="flex justify-center gap-2">
-                                <!-- View Button -->
-                                <button
-                                    @click="viewTask(task)"
-                                    class="px-1 py-1  text-black text-xs rounded transition"
-                                    title="View"
-                                >
+                                <button @click="viewTask(task)" class="px-1 py-1 text-black text-xs rounded transition" title="View">
                                     <EyeIcon class="w-4 h-4" />
                                 </button>
-
-                                <!-- Edit Button -->
-                                <button
-                                    @click="editTask(task)"
-                                    class="px-1 py-1 text-black text-xs rounded transition"
-                                    title="Edit"
-                                >
+                                <button @click="editTask(task)" class="px-1 py-1 text-black text-xs rounded transition" title="Edit">
                                     <PencilSquareIcon class="w-4 h-4" />
                                 </button>
-
-                                <!-- Delete Button -->
-                                <button
-                                    @click="deleteTask(task.id)"
-                                    class="px-1 py-1 text-black text-xs rounded transition"
-                                    title="Delete"
-                                >
+                                <button @click="deleteTask(task.id)" class="px-1 py-1 text-black text-xs rounded transition" title="Delete">
                                     <TrashIcon class="w-4 h-4" />
                                 </button>
                             </div>
@@ -106,7 +86,18 @@
             </table>
         </div>
 
-        <!-- View Modal -->
+        <!-- Pagination -->
+        <div class="mt-6 flex justify-end">
+            <VueAwesomePaginate
+                v-model="currentPage"
+                :total-items="pagination.total"
+                :items-per-page="pagination.items_per_page"
+                :max-pages-shown="5"
+                @click="onClickHandler"
+            />
+        </div>
+
+        <!-- View Modal (same as before) -->
         <div v-if="showViewModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div class="bg-white rounded-lg max-w-md w-full p-6">
                 <h3 class="text-xl font-bold mb-4 text-gray-800">Task Details</h3>
@@ -145,10 +136,12 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useAuthStore } from '../store/authStore';
-import { PencilSquareIcon , TrashIcon , EyeIcon} from '@heroicons/vue/16/solid';
+import { PencilSquareIcon, TrashIcon, EyeIcon } from '@heroicons/vue/16/solid';
 import Swal from 'sweetalert2';
+import { VueAwesomePaginate } from 'vue-awesome-paginate';
+import 'vue-awesome-paginate/dist/style.css';
 
 const emit = defineEmits(['editTask']);
 
@@ -160,45 +153,58 @@ const showViewModal = ref(false);
 const currentTask = ref(null);
 const authStore = useAuthStore();
 
-const filteredTasks = computed(() => {
-    let filtered = tasks.value;
+const currentPage = ref(1);
 
-    if (searchQuery.value) {
-        const query = searchQuery.value.toLowerCase();
-        filtered = filtered.filter(
-            (task) =>
-                task.title.toLowerCase().includes(query) ||
-                (task.description && task.description.toLowerCase().includes(query))
-        );
-    }
-
-    if (filterStatus.value) {
-        filtered = filtered.filter((task) => task.status === filterStatus.value);
-    }
-
-    return filtered;
+const pagination = ref({
+    page_number: 1,
+    items_per_page: 5,
+    total: 0,
 });
 
 onMounted(() => {
     fetchTasks();
 });
 
+const handleFilterChange = () => {
+    pagination.value.page_number = 1;
+    fetchTasks();
+};
+
+const onClickHandler = (page) => {
+    currentPage.value = page;
+    pagination.value.page_number = page;
+    fetchTasks();
+};
+
 const fetchTasks = async () => {
     loading.value = true;
     try {
-        const config = {
+        const response = await axios.get('/tasks', {
             headers: {
                 Authorization: `${authStore.token}`,
             },
-        };
-        const response = await axios.get('/tasks', config);
-        tasks.value = response.data.data;
+            params: {
+                page_number: pagination.value.page_number,
+                items_per_page: pagination.value.items_per_page,
+                search: searchQuery.value || null,
+                status: filterStatus.value || null,
+            },
+        });
+
+        tasks.value = response.data.data.tasks;
+        pagination.value.total = response.data.data.total;
+
     } catch (error) {
         console.error('Error fetching tasks:', error);
+        Swal.fire('Error', 'Failed to load tasks', 'error');
     } finally {
         loading.value = false;
     }
 };
+
+watch(currentPage, () => {
+    fetchTasks();
+});
 
 const viewTask = (task) => {
     currentTask.value = task;
@@ -225,64 +231,75 @@ const deleteTask = async (taskId) => {
     if (!result.isConfirmed) return;
 
     try {
-        const response = await axios.delete(`/tasks/${taskId}`, {
-            headers: {
-                Authorization: authStore.token,
-            },
+        await axios.delete(`/tasks/${taskId}`, {
+            headers: { Authorization: authStore.token },
         });
-        tasks.value = tasks.value.filter(task => task.id !== taskId);
 
         Swal.fire({
             toast: true,
             position: "top-end",
             icon: "success",
-            title: "Task deleted successfully and sent to trash!",
+            title: "Task deleted successfully!",
             showConfirmButton: false,
-            timer: 3500,
+            timer: 3000,
         });
 
+        fetchTasks();
     } catch (error) {
         console.error("Error deleting task:", error);
         Swal.fire("Error", "Failed to delete task", "error");
-    } finally {
-        fetchTasks();
     }
 };
 
-const formatStatus = (status) => {
-    const statusMap = {
-        pending: 'Pending',
-        in_progress: 'In Progress',
-        completed: 'Completed',
-    };
-    return statusMap[status] || status;
-};
+const formatStatus = (status) => ({
+    pending: 'Pending',
+    in_progress: 'In Progress',
+    completed: 'Completed',
+}[status] || status);
 
-const formatDescription = (description) => {
-    if (description.length > 30) {
-        return description.substring(0, 30) + '...';
-    }
-    return description;
-};
+const formatDescription = (desc) => desc?.length > 30 ? desc.substring(0, 30) + '...' : desc;
+const formatTitle = (title) => title?.length > 15 ? title.substring(0, 15) + '...' : title;
 
-const formatTitle = (title) => {
-    if (title.length > 15) {
-        return title.substring(0, 15) + '...';
-    }
-    return title;
-};
+const getStatusClass = (status) => ({
+    pending: 'bg-yellow-100 text-yellow-800',
+    in_progress: 'bg-blue-100 text-blue-800',
+    completed: 'bg-green-100 text-green-800',
+}[status] || 'bg-gray-100 text-gray-800');
 
-const getStatusClass = (status) => {
-    const statusClassMap = {
-        pending: 'bg-yellow-100 text-yellow-800',
-        in_progress: 'bg-blue-100 text-blue-800',
-        completed: 'bg-green-100 text-green-800',
-    };
-    return statusClassMap[status] || 'bg-gray-100 text-gray-800';
-};
-
-// Watch for task saved event to refresh
-defineExpose({
-    refreshTasks: fetchTasks,
-});
+defineExpose({ refreshTasks: fetchTasks });
 </script>
+
+<style scoped>
+:deep(.pagination-container) {
+    gap: 6px;
+}
+
+:deep(.paginate-buttons) {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 9999px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    font-weight: 500;
+    transition: all 0.25s ease;
+}
+
+:deep(.paginate-buttons:hover:not(:disabled)) {
+    background-color: #eff6ff;
+    border-color: #60a5fa;
+    color: #1e40af;
+}
+
+:deep(.paginate-buttons.active-page) {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 6px -1px rgb(59 130 246 / 0.3);
+}
+
+:deep(.paginate-buttons:disabled) {
+    opacity: 0.4;
+}
+</style>

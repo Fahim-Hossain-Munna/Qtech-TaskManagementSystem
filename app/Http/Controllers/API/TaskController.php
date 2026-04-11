@@ -13,41 +13,49 @@ use Illuminate\Validation\ValidationException;
 
 class TaskController extends Controller
 {
-    /**
-     * Get all tasks for authenticated user with search and filter
-     */
+
     public function index(Request $request)
     {
         try {
             $user = Auth::user();
             $query = Task::where('user_id', $user->id);
 
-            // Search functionality
-            if ($request->has('search') && $request->search) {
+            $perPage = $request->input('items_per_page', 15);
+            $pageNumber = $request->input('page_number', 1);
+            $skip = ($pageNumber - 1) * $perPage;
+
+            // Search
+            if ($request->search) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('title', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
                 });
             }
 
-            // Filter by status
-            if ($request->has('status') && $request->status) {
+            // Status filter
+            if ($request->status) {
                 $query->where('status', $request->status);
             }
 
-            // Sort by latest
-            $tasks = $query->orderBy('created_at', 'desc')->get();
+            $total = $query->count();
 
-            return $this->json('Tasks fetched successfully', TaskResource::collection($tasks) ,200);
+            $tasks = $query->orderBy('created_at', 'desc')
+            ->skip($skip)
+            ->take($perPage)
+            ->get();
+
+            return $this->json('Tasks fetched successfully',[
+                'tasks' => TaskResource::collection($tasks),
+                'total' => $total,
+            ]
+            , 200);
+
         } catch (\Exception $e) {
-            return $this->json('Error fetching tasks', $e->getMessage(),500);
+            return $this->json('Error fetching tasks', $e->getMessage(), 500);
         }
     }
 
-    /**
-     * Create a new task
-     */
     public function store(TaskStoreRequest $request)
     {
         try {
@@ -66,9 +74,6 @@ class TaskController extends Controller
         }
     }
 
-    /**
-     * Get a single task
-     */
     public function show($id)
     {
         try {
@@ -80,9 +85,6 @@ class TaskController extends Controller
         }
     }
 
-    /**
-     * Update a task
-     */
     public function update(TaskUpdateRequest $request, $id)
     {
         try {
@@ -96,9 +98,6 @@ class TaskController extends Controller
         }
     }
 
-    /**
-     * Delete a task
-     */
     public function destroy($id)
     {
         try {
