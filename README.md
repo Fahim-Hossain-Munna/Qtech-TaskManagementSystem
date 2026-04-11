@@ -1,4 +1,4 @@
-# Task Management System - NextiveE-BookSolution
+# Task Management System - QTech
 
 একটি আধুনিক টাস্ক ম্যানেজমেন্ট সিস্টেম যা **Laravel 12**, **Vue 3**, **Tailwind CSS**, এবং **JWT Authentication** দিয়ে তৈরি।
 
