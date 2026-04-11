@@ -6,7 +6,6 @@
                 <!-- Search Input -->
                 <input
                     v-model="searchQuery"
-                    @input="handleSearch"
                     type="text"
                     placeholder="Search tasks..."
                     class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -15,7 +14,6 @@
                 <!-- Filter Select -->
                 <select
                     v-model="filterStatus"
-                    @change="handleFilter"
                     class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                     <option value="">All Status</option>
@@ -46,39 +44,39 @@
             <table class="min-w-full border-collapse">
                 <thead>
                     <tr class="bg-gray-100 border-b-2 border-gray-300">
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">ID</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Title</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Description</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
-                        <th class="px-6 py-3 text-center text-sm font-semibold text-gray-700">Actions</th>
+                        <th class="px-2 py-3 text-left text-sm font-semibold text-gray-700">ID</th>
+                        <th class="px-2 py-3 text-left text-sm font-semibold text-gray-700">Title</th>
+                        <th class="px-2 py-3 text-left text-sm font-semibold text-gray-700">Description</th>
+                        <th class="px-2 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+                        <th class="px-2 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
+                        <th class="px-2 py-3 text-center text-sm font-semibold text-gray-700">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="task in filteredTasks" :key="task.id" class="border-b border-gray-200 hover:bg-gray-50 transition">
-                        <td class="px-6 py-4 text-sm text-gray-800">#{{ task.id }}</td>
-                        <td class="px-6 py-4 text-sm font-medium text-gray-800">{{ task.title }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">
-                            <span v-if="task.description" class="line-clamp-2">{{ task.description }}</span>
+                        <td class="px-2 py-4 text-sm text-gray-800">#{{ task.id }}</td>
+                        <td class="px-2 py-4 text-sm font-medium text-gray-800">{{ formatTitle(task.title) }}</td>
+                        <td class="px-2 py-4 text-sm text-gray-600">
+                            <span v-if="task.description" class="line-clamp-2">{{ formatDescription(task.description) }}</span>
                             <span v-else class="text-gray-400 italic">No description</span>
                         </td>
-                        <td class="px-6 py-4 text-sm">
+                        <td class="px-2 py-4 text-sm">
                             <span
                                 :class="getStatusClass(task.status)"
-                                class="px-3 py-1 rounded-full text-xs font-semibold"
+                                class="px-2 py-1 rounded-full text-[10px] font-semibold"
                             >
                                 {{ formatStatus(task.status) }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">
+                        <td class="px-2 py-4 text-sm text-gray-600">
                             {{ task.created_at }}
                         </td>
-                        <td class="px-6 py-4 text-center">
+                        <td class="px-2 py-4 text-center">
                             <div class="flex justify-center gap-2">
                                 <!-- View Button -->
                                 <button
                                     @click="viewTask(task)"
-                                    class="px-3 py-1  text-black text-xs rounded transition"
+                                    class="px-1 py-1  text-black text-xs rounded transition"
                                     title="View"
                                 >
                                     <EyeIcon class="w-4 h-4" />
@@ -87,7 +85,7 @@
                                 <!-- Edit Button -->
                                 <button
                                     @click="editTask(task)"
-                                    class="px-3 py-1 text-black text-xs rounded transition"
+                                    class="px-1 py-1 text-black text-xs rounded transition"
                                     title="Edit"
                                 >
                                     <PencilSquareIcon class="w-4 h-4" />
@@ -96,7 +94,7 @@
                                 <!-- Delete Button -->
                                 <button
                                     @click="deleteTask(task.id)"
-                                    class="px-3 py-1 text-black text-xs rounded transition"
+                                    class="px-1 py-1 text-black text-xs rounded transition"
                                     title="Delete"
                                 >
                                     <TrashIcon class="w-4 h-4" />
@@ -125,7 +123,7 @@
                         <p class="text-sm text-gray-600">Status</p>
                         <span
                             :class="getStatusClass(currentTask?.status)"
-                            class="px-3 py-1 rounded-full text-xs font-semibold inline-block"
+                            class="px-2 py-1 rounded-full text-xs font-semibold inline-block"
                         >
                             {{ formatStatus(currentTask?.status) }}
                         </span>
@@ -258,6 +256,20 @@ const formatStatus = (status) => {
         completed: 'Completed',
     };
     return statusMap[status] || status;
+};
+
+const formatDescription = (description) => {
+    if (description.length > 30) {
+        return description.substring(0, 30) + '...';
+    }
+    return description;
+};
+
+const formatTitle = (title) => {
+    if (title.length > 15) {
+        return title.substring(0, 15) + '...';
+    }
+    return title;
 };
 
 const getStatusClass = (status) => {

@@ -73,10 +73,11 @@ import { onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useAuthStore } from '@/store/authStore';
 import Swal from 'sweetalert2';
+import { useRouter } from 'vue-router';
 
 const isOpen = ref(false);
-const categories = ref([]);
 const profileOpen = ref(false);
+const router = useRouter();
 const authStore = useAuthStore();
 
 const toggleProfileMenu = () => {
@@ -116,8 +117,8 @@ const logout = () => {
                 icon: "success",
                 title: "You’ve exited safely. Have a great day!"
             });
+            router.push("/login");
         }
-        router.push("/");
     });
 };
 </script>
